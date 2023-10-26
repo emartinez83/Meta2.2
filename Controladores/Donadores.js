@@ -1,18 +1,23 @@
-const donador = require("../Modelo/Donadores");
-const proyecto = require ("../Modelo/Proyecto")
+const Donadores = require('../models/donadores'); // Asegúrate de que la ruta sea correcta
+
 const getAllDonadores = async function(req, res) {
     try {
-        let donadores = donador.findAllDonadores();
+        const donadores = await Donadores.findAll(); // Utiliza Sequelize para buscar todos los donadores
         res.json(donadores);
     } catch (error) {
         res.status(500).json({ error: "Error interno del servidor" });
     }
 };
 
-const getProyectosAsociados = async function(req, res) {
+const getProyectosAsociados = async function (req, res) {
     try {
         const rfcDonador = req.params.rfc;
-        const donadorEncontrado = donador.findByRFC(rfcDonador);
+
+        // Utiliza Sequelize para buscar el donador por su RFC e incluir la relación con proyectos
+        const donadorEncontrado = await Donadores.findOne({
+            where: { rfc: rfcDonador },
+            include: 'proyecto', // Asegúrate de que esto coincida con el alias configurado en tu modelo
+        });
 
         if (!donadorEncontrado) {
             res.status(404).json({ error: "Donador no encontrado" });
@@ -20,7 +25,7 @@ const getProyectosAsociados = async function(req, res) {
         }
 
         // Obtenemos la lista de proyectos asociados al donador
-        const proyectosAsociados = donadorEncontrado.proyectosAsociados;
+        const proyectosAsociados = donadorEncontrado.proyecto;
 
         res.json(proyectosAsociados);
     } catch (error) {
@@ -28,11 +33,15 @@ const getProyectosAsociados = async function(req, res) {
     }
 };
 
-
 const getByRFC = async function(req, res) {
     try {
         const rfc = req.params.rfc; // Obtén el RFC de la solicitud
-        let donadorEncontrado = donador.findByRFC(rfc);
+
+        // Utiliza Sequelize para buscar el donador por su RFC
+        const donadorEncontrado = await Donadores.findOne({
+            where: { rfc },
+        });
+
         if (donadorEncontrado) {
             res.json(donadorEncontrado);
         } else {
